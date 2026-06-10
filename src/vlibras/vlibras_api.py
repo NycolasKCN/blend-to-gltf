@@ -16,6 +16,10 @@ class GlosaDictionary:
             raise ValueError(f"'{glosa}' glosa not found.")
 
         task: dict = data.pop()
+        code: str = task["code"]
+        if (not code) or not code.strip().lower() == glosa.strip().lower():
+            raise ValueError(f"'{glosa}' glosa not found.")
+
         return task["task_id"]
 
 

@@ -83,11 +83,15 @@ async def get_glb_file(glosa: str):
         media_type="model/gltf-binary"
     )
 
-@app.get("/static/glb/base-model", response_class=FileResponse)
-def get_base_model() -> FileResponse:
-    moldel_path: Path = Path("./glb/model/base-model.glb")
+@app.get("/static/glb/model/{name}", response_class=FileResponse)
+def get_model(name: str) -> FileResponse:
+    moldel_path: Path = Path("./glb/models/icaro.glb")
     return FileResponse(
         path=str(moldel_path),
-        filename="base-model.glb",
+        filename="icaro.glb",
         media_type="model/gltf-binary"
     )
+
+@app.get("/health")
+def health_check() -> dict:
+    return {"status": "ok"}
