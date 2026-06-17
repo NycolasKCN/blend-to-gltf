@@ -1,7 +1,8 @@
 """
 export_animations.py
 -----------------------
-Exporta a Armature com seu animation clip atual para .glb.
+Exporta a Armature com seu animation clip atual para .glb,
+forçando a escala de todos os bones para 1.
 
 USO:
   blender --background --python export_animations.py -- input.blend -o saida.glb
@@ -37,6 +38,30 @@ def reset_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
+def force_bone_scales_to_one(arm_obj):
+    """
+    Força a escala de todos os pose bones para (1.0, 1.0, 1.0) e 
+    remove qualquer F-Curve de escala da action atual para que a 
+    animação não sobrescreva os valores durante a exportação.
+    """
+    # 1. Zera a escala de todos os bones na pose atual
+    for pb in arm_obj.pose.bones:
+        pb.scale = (1.0, 1.0, 1.0)
+        
+    # 2. Remove as trilhas de animação de escala (F-Curves) da Action ativa
+    if arm_obj.animation_data and arm_obj.animation_data.action:
+        action = arm_obj.animation_data.action
+        
+        # Encontra fcurves relacionadas à escala dos bones (ex: pose.bones["Bone"].scale)
+        curves_to_remove = [fc for fc in action.fcurves if fc.data_path.endswith(".scale")]
+        
+        for fc in curves_to_remove:
+            action.fcurves.remove(fc)
+            
+        if curves_to_remove:
+            print(f"  [INFO] Removidas {len(curves_to_remove)} curvas de animação de escala.")
+
+
 def import_armature(filepath: str, armature_name: str, verbose: bool):
     filepath = os.path.abspath(filepath)
 
@@ -69,6 +94,9 @@ def import_armature(filepath: str, armature_name: str, verbose: bool):
             bpy.data.meshes.remove(mesh)
 
     print(f"  Armature: '{arm_obj.name}' ({len(arm_obj.data.bones)} bones)")
+
+    # ---> MODIFICAÇÃO AQUI: Aplica a escala 1 em todos os bones
+    force_bone_scales_to_one(arm_obj)
 
     # Reporta a action já atribuída (se houver)
     if arm_obj.animation_data and arm_obj.animation_data.action:
