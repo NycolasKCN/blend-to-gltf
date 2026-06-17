@@ -92,6 +92,32 @@ def get_model(name: str) -> FileResponse:
         media_type="model/gltf-binary"
     )
 
+@app.get("/blend/{glosa}", response_class=FileResponse)
+def get_blend(glosa: str) -> FileResponse:
+    try:
+        task_id: int = dictionary.search_glosa_task_id(glosa)
+        blend_path: str = tasks.get_blend_path(task_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    job_id = uuid().hex
+    job_dir = TEMP_DIR / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        blend_file = job_dir / f"{glosa}.blend" 
+
+        download.download(blend_path, blend_file)
+    except Exception as e:
+        logger.error(e)
+        shutil.rmtree(job_dir, ignore_errors=True)
+        raise e
+
+    return FileResponse(
+        path=str(blend_file),
+        filename=f"{glosa}.blend",
+    )
+
 @app.get("/health")
 def health_check() -> dict:
     return {"status": "ok"}
